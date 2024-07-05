@@ -2,6 +2,7 @@
 #include <memory>
 #include <functional>
 #include <ucontext.h>
+#include <atomic>
 /**
  *  @brief 协程类
  */
@@ -41,7 +42,7 @@ public:
      * @brief 重置当前协程状态和入口函数
      * @param cb
      */
-    void reset(std::function<void> cb);
+    void reset(std::function<void()> cb);
 
     /**
      * @brief 将当前协程切换到执行状态

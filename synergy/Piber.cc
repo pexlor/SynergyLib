@@ -26,12 +26,12 @@ Piber::Piber()
 
     ++s_piber_count;
     m_id = s_piber_id++;
-    DEBUG("Piber::Piber() main id = %d", m_id);
+    printf("Piber::Piber() main id = %d\n", m_id);
 }
 /**
  * @brief 构造函数，用于创建用户协程
  * @param cb 协程入口函数
- * @param stacksize 栈大小
+ * @param stacksize 栈大小,默认值128
  * @param run_in_scheduler 是否参与调度器调度
  */
 Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
@@ -39,19 +39,20 @@ Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
      m_cb(cb)
 {
     ++s_piber_count;
-    m_stacksize = stacksize ? stacksize : g_piber_stack_size->getValue();
-    m_stack = StackAllocator::Alloc(m_stacksize);
-
+    m_stacksize = stacksize ? stacksize : 128 * 1024; /// 这里可以用配置文件
+    m_stack = malloc(m_stacksize);
+    //m_stack     = StackAllocator::Alloc(m_stacksize);
     if(getcontext(&m_ctx))
     {
-
+        
     }
-    m_ctx.uc_link=;
-    m_ctx.uc_stack.ss_sp = ;
-    m_ctx.uc_stack.ss_size = ;
+    m_ctx.uc_link           = nullptr ;
+    m_ctx.uc_stack.ss_sp    = m_stack;
+    m_ctx.uc_stack.ss_size  = m_stacksize;
+
     makecontext(&m_ctx,&Piber::MainFunc,0);
 
-    DEBUG("Fiber::Fiber() id = %d",m_id);
+    printf("Fiber::Fiber() id = %d\n",m_id);
 }
 
 /**
@@ -59,7 +60,17 @@ Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
  */
 Piber::~Piber()
 {
-    
+    --s_piber_count;
+    if(m_stack)
+    {
+        free(m_stack);
+    }else{
+        Piber *cur = t_piber;
+        if(cur == this)
+        {
+            SetThis(nullptr);
+        }
+    }
 }
 
 /**
@@ -68,7 +79,18 @@ Piber::~Piber()
  */
 void Piber::reset(std::function<void()> cb)
 {
+    m_cb = cb;
+    if(getcontext(&m_ctx))
+    {
 
+    }
+    m_ctx.uc_link           =nullptr ;
+    m_ctx.uc_stack.ss_sp    = m_stack;
+    m_ctx.uc_stack.ss_size  = m_stacksize;
+
+    makecontext(&m_ctx,&Piber::MainFunc,0);
+    m_state = READY;
+    printf("Fiber::Fiber() id = %d\n",m_id);
 }
 
 /**
@@ -97,7 +119,7 @@ void Piber::yield()
     }
     if(swapcontext(&m_ctx,&(t_thread_piber->m_ctx)))
     {
-        
+
     }
 }
 
@@ -106,7 +128,7 @@ void Piber::yield()
  */
 void Piber::SetThis(Piber *f)
 {
-
+    t_piber = f;
 }
 /**
  * @brief 返回当前线程正在执⾏的协程
@@ -117,14 +139,16 @@ void Piber::SetThis(Piber *f)
  */
 
 ///可以改进，将初始化操作合getthis分开
-Piber::ptr GetThis()
+Piber::ptr Piber::GetThis()
 {
+    
     if(t_piber)
     {
         return t_piber->shared_from_this();
     }
     Piber::ptr main_piber(new Piber);
     t_thread_piber = main_piber;
+    printf("ok\n");
     return t_piber->shared_from_this();
 }
 
@@ -139,14 +163,22 @@ uint64_t Piber::TotalFibers()
 /**
  * @brief 协程⼊⼝函数
  */
-void MainFunc()
+void Piber::MainFunc()
 {
+    Piber::ptr cur = GetThis();
 
+    cur->m_cb();
+    cur->m_cb = nullptr;
+    cur->m_state = TERM;
+
+    auto rwa_ptr = cur.get();
+    cur.reset();
+    rwa_ptr->yield();
 }
 /**
  * @brief 获取当前协程id
  */
-uint64_t GetFiberId()
+uint64_t Piber::GetFiberId()
 {
 
 }

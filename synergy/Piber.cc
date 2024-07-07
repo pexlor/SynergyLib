@@ -6,9 +6,8 @@ static std::atomic<uint64_t> s_piber_count{ 0 };
 static std::atomic<uint64_t> s_piber_id{ 0 };
 
 
-static thread_local Piber * t_piber = nullptr;
-static thread_local Piber::ptr t_thread_piber = nullptr;
-
+static thread_local Piber * t_piber = nullptr;//正在执行的协程
+static thread_local Piber::ptr t_thread_piber = nullptr; //当前线程的主协程
 
 /**
  * @brief 构造函数
@@ -36,7 +35,8 @@ Piber::Piber()
  */
 Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
     :m_id(s_piber_id++),
-     m_cb(cb)
+     m_cb(cb),
+     m_runInScheduler(run_in_scheduler)
 {
     ++s_piber_count;
     m_stacksize = stacksize ? stacksize : 128 * 1024; /// 这里可以用配置文件
@@ -100,9 +100,20 @@ void Piber::resume()
 {
     SetThis(this);
     m_state = RUNING;
-    if(swapcontext(&(t_thread_piber->m_ctx),&m_ctx))
-    {
 
+    /// 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
+    if(m_runInScheduler)
+    {
+        if(swapcontext(&(t_thread_piber->m_ctx),&m_ctx))
+        {
+
+        }
+    }else
+    {
+        if(swapcontext(&(Scheduler::GetMainPiber()->m_ctx),&m_ctx))
+        {
+
+        }
     }
 }
 
@@ -117,9 +128,20 @@ void Piber::yield()
     {
         m_state = READY;
     }
-    if(swapcontext(&m_ctx,&(t_thread_piber->m_ctx)))
-    {
 
+    /// 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
+    if(m_runInScheduler)
+    {
+        if(swapcontext(&m_ctx,&(t_thread_piber->m_ctx)))
+        {
+
+        }
+    }else
+    {
+        if(swapcontext(&m_ctx,&(Scheduler::GetMainPiber()->m_ctx)))
+        {
+
+        }
     }
 }
 

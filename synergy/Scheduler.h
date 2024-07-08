@@ -2,7 +2,11 @@
 #include "Piber.h"
 #include <vector>
 #include <list>
+#include <functional>
 #include "common/mutex.h"
+#include "common/thread.h"
+#include "common/log.h"
+
 namespace Pliber{
 
 /**
@@ -45,6 +49,8 @@ struct ScheduleTask
     }
 };
 
+
+
 class Scheduler
 {
 private:
@@ -53,6 +59,8 @@ private:
     std::vector<Thread::ptr> m_threads;
     std::list<ScheduleTask> m_tasks;
     size_t m_threadCount = 0;
+    /// 线程池的线程ID数组
+    std::vector<int> m_threadIds;
     std::atomic<size_t> m_activeThreadCount = {0};
     std::atomic<size_t> m_idleThreadCount = {0};
     bool m_useCaller;
@@ -63,19 +71,15 @@ private:
     bool m_stopping = false;
 
 public:
-    Scheduler(/* args */);
+    Scheduler(size_t threads,bool use_caller,const std::string &name);
     ~Scheduler();
+    void start();
+    void run();
+    Scheduler *GetThis();
+    Piber *GetMainFiber();
 };
 
-Scheduler::Scheduler(/* args */)
-{
-    
-}
 
-Scheduler::~Scheduler()
-{
-
-}
 
 
 

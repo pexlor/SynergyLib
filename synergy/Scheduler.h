@@ -1,5 +1,8 @@
 #pragma once
 #include "Piber.h"
+#include <vector>
+#include <list>
+#include "common/mutex.h"
 namespace Pliber{
 
 /**
@@ -46,7 +49,19 @@ class Scheduler
 {
 private:
     std::string m_name;
-    
+    Mutex m_mutex;
+    std::vector<Thread::ptr> m_threads;
+    std::list<ScheduleTask> m_tasks;
+    size_t m_threadCount = 0;
+    std::atomic<size_t> m_activeThreadCount = {0};
+    std::atomic<size_t> m_idleThreadCount = {0};
+    bool m_useCaller;
+
+    Piber::ptr m_rootPiber;
+    int m_rootThread = 0;
+
+    bool m_stopping = false;
+
 public:
     Scheduler(/* args */);
     ~Scheduler();
@@ -59,6 +74,7 @@ Scheduler::Scheduler(/* args */)
 
 Scheduler::~Scheduler()
 {
+
 }
 
 

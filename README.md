@@ -101,7 +101,8 @@
 ### 5、Linux 内存分配
     
 ### 6、Linux IO多路复用
-    epoll，select，io_uring
+    epoll，select
+### 7、Linux 原生异步I/O
 
 ## 三、开始动手写了
 >采用非对称有栈的模型，使用ucontext族函数获取执行的上下文。 

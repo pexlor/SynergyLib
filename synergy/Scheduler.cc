@@ -61,4 +61,10 @@ void Scheduler::start()
     }
 }
 
+bool Scheduler::stopping() {
+    
+    ScopeMutex<Mutex> t_scopeMutex(m_mutex);
+    return m_stopping && m_tasks.empty() && m_activeThreadCount == 0;
+}
+
 }

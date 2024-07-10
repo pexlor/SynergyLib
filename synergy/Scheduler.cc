@@ -67,4 +67,125 @@ bool Scheduler::stopping() {
     return m_stopping && m_tasks.empty() && m_activeThreadCount == 0;
 }
 
+
+void Scheduler::run()
+{
+    DEBUG("Scheduler run");
+    setThis();
+    if(GetThreadD() != m_rootThread)
+    {
+        t_scheduler_piber = Piber::GetThis().get();
+    }
+    Piber::ptr idle_piber(new Piber(std::bind(&Scheduler::idle,this)));
+    Piber::ptr cb_piber;
+
+    ScheduleTask task;
+
+
+    while(true)
+    {
+        task.reset();
+        bool tickle_me = false;
+        {
+            //互斥锁
+            ScopeMutex<Mutex> t_scopeMutex(m_mutex);
+            auto it = m_tasks.begin();
+            while(it != m_tasks.end())
+            {
+                if(it->thread != -1 && it->thread != GetThreadId())
+                {
+                    //指定了调度线程，但是不在当前线程上调度
+                    ++it;
+                    tickle_me = true;
+                    continue;
+                }
+
+                if(it->piber)
+                {
+
+                }
+
+                task = *it;
+                m_tasks.erase(it++);
+                ++m_activeThreadCount;
+                break;
+            }
+        }
+        tickle_me |=(it != m_tasks.end())
+        if(tickle_me)
+        {
+            tickle();
+        }
+        if(task.piber)
+        {
+            task.piber->resume();
+            --m_activeThreadCount;
+            task.reset();
+        }else if(task.cb)
+        {
+            if(cb_piber)
+            {
+                cb_piber->reset(task.cb);
+            }else
+            {
+                cb_piber.reset(new Piber(task.cb));
+            }
+            task.reset();
+            cb_piber->resume();
+            --m_activeThreadCount;
+            cb_piber.reset();
+        }else
+        {
+            // 进到这个分支情况一定是任务队列空了，调度idle协程即可
+            if (idle_piber->getState() == Piber::TERM) {
+                // 如果调度器没有调度任务，那么idle协程会不停地resume/yield，不会结束，如果idle协程结束了，那一定是调度器停止了
+                //SYLAR_LOG_DEBUG(g_logger) << "idle fiber term";
+                break;
+            }
+            ++m_idleThreadCount;
+            idle_piber->resume();
+            --m_idleThreadCount;
+        }
+    } 
+}
+
+
+void Scheduler::stop() {
+    SYLAR_LOG_DEBUG(g_logger) << "stop";
+    if (stopping()) {
+        return;
+    }
+    m_stopping = true;
+ 
+    /// 如果use caller，那只能由caller线程发起stop
+    if (m_useCaller) {
+        //SYLAR_ASSERT(GetThis() == this);
+    } else {
+        //SYLAR_ASSERT(GetThis() != this);
+    }
+ 
+    for (size_t i = 0; i < m_threadCount; i++) {
+        tickle();
+    }
+ 
+    if (m_rootFiber) {
+        tickle();
+    }
+ 
+    /// 在use caller情况下，调度器协程结束时，应该返回caller协程
+    if (m_rootPiber) {
+        m_rootPiber->resume();
+        //SYLAR_LOG_DEBUG(g_logger) << "m_rootFiber end";
+    }
+ 
+    std::vector<Thread::ptr> thrs;
+    {
+        ScopeMutex<Mutex> t_scopeMutex(m_mutex);
+        thrs.swap(m_threads);
+    }
+
+    for (auto &i : thrs) {
+        i->join();
+    }
+}
 }

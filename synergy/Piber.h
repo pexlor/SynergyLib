@@ -11,6 +11,7 @@ namespace Pliber{
 class Piber : public std::enable_shared_from_this<Piber> {
 public:
     typedef std::shared_ptr<Piber> ptr;
+    
     enum State {
         ///就绪态
         READY,
@@ -19,6 +20,7 @@ public:
         ///结束态
         TERM
     };
+
 private:
     /**
      * @brief 构造函数

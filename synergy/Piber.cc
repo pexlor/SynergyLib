@@ -7,7 +7,7 @@ static std::atomic<uint64_t> s_piber_id{ 0 };
 
 
 static thread_local Piber * t_piber = nullptr;//正在执行的协程
-static thread_local Piber::ptr t_thread_piber = nullptr; //当前线程的主协程
+static thread_local Piber::ptr t_thread_piber = nullptr; //当前线程的主协程。
 
 /**
  * @brief 构造函数
@@ -18,7 +18,7 @@ Piber::Piber()
     SetThis(this);
     m_state = RUNING;
 
-    if(getcontext(&m_ctx))
+    if(getcontext(&m_ctx)) // 获取上下文
     {
 
     }
@@ -27,6 +27,7 @@ Piber::Piber()
     m_id = s_piber_id++;
     printf("Piber::Piber() main id = %d\n", m_id);
 }
+
 /**
  * @brief 构造函数，用于创建用户协程
  * @param cb 协程入口函数
@@ -40,9 +41,9 @@ Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
 {
     ++s_piber_count;
     m_stacksize = stacksize ? stacksize : 128 * 1024; /// 这里可以用配置文件
-    m_stack = malloc(m_stacksize);
+    m_stack = malloc(m_stacksize); /// 分配栈
     //m_stack     = StackAllocator::Alloc(m_stacksize);
-    if(getcontext(&m_ctx))
+    if(getcontext(&m_ctx)) /// 获取上下文
     {
         
     }
@@ -50,7 +51,7 @@ Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
     m_ctx.uc_stack.ss_sp    = m_stack;
     m_ctx.uc_stack.ss_size  = m_stacksize;
 
-    makecontext(&m_ctx,&Piber::MainFunc,0);
+    makecontext(&m_ctx,&Piber::MainFunc,0); //绑定函数
 
     printf("Fiber::Fiber() id = %d\n",m_id);
 }
@@ -68,7 +69,7 @@ Piber::~Piber()
         Piber *cur = t_piber;
         if(cur == this)
         {
-            SetThis(nullptr);
+            SetThis(nullptr); //设置正在运行的协程
         }
     }
 }
@@ -104,7 +105,7 @@ void Piber::resume()
     /// 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
     if(m_runInScheduler)
     {
-        if(swapcontext(&(t_thread_piber->m_ctx),&m_ctx))
+        if(swapcontext(&(t_thread_piber->m_ctx),&m_ctx)) /// 恢复上下文
         {
 
         }

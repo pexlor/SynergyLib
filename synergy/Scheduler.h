@@ -5,7 +5,7 @@
 #include <functional>
 #include "common/mutex.h"
 #include "common/thread.h"
-#include "common/log.h"
+//#include "common/log.h"
 
 namespace Pliber{
 

@@ -18,9 +18,8 @@ Scheduler::Scheduler(size_t threads,bool use_caller,const std::string &name):
 {
     if(use_caller){
         --threads;
-        Piber::GetThis();
+        Piber::GetThis();///创建线程主协程
         t_scheduler = this;
-
         m_rootPiber.reset(new Piber(std::bind(&Scheduler::run,this),0,false));
 
         Thread::SetName(m_name);
@@ -110,8 +109,8 @@ void Scheduler::run()
                 ++m_activeThreadCount;
                 break;
             }
+            tickle_me |=(it != m_tasks.end());
         }
-        tickle_me |=(it != m_tasks.end())
         if(tickle_me)
         {
             tickle();

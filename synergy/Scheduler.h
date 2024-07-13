@@ -72,6 +72,7 @@ public:
     ~Scheduler();
     void start();
     void run();
+    void stop();
     Scheduler *GetThis();
     Piber *GetMainPiber();
 };

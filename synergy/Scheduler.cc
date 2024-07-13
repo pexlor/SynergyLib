@@ -39,7 +39,7 @@ Scheduler *Scheduler::GetThis() {
     return t_scheduler;
 }
 
-Piber *Scheduler::GetMainFiber() {
+Piber *Scheduler::GetMainPiber() {
     return t_scheduler_piber;
 }
 

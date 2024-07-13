@@ -54,29 +54,26 @@ struct ScheduleTask
 class Scheduler
 {
 private:
-    std::string m_name;
-    Mutex m_mutex;
-    std::vector<Thread::ptr> m_threads;
-    std::list<ScheduleTask> m_tasks;
-    size_t m_threadCount = 0;
-    /// 线程池的线程ID数组
-    std::vector<int> m_threadIds;
-    std::atomic<size_t> m_activeThreadCount = {0};
-    std::atomic<size_t> m_idleThreadCount = {0};
-    bool m_useCaller;
+    std::string m_name;///调度器名字
+    Mutex m_mutex; ///m_tasks的互斥器
+    std::vector<Thread::ptr> m_threads;///线程池
+    std::list<ScheduleTask> m_tasks;///任务队列
+    size_t m_threadCount = 0;///线程数
+    std::vector<int> m_threadIds;/// 线程池的线程ID数组
+    std::atomic<size_t> m_activeThreadCount = {0}; ///活跃状态的线程数
+    std::atomic<size_t> m_idleThreadCount = {0};///空闲线程数
+    bool m_useCaller;//是否使用创建线程
 
-    Piber::ptr m_rootPiber;
-    int m_rootThread = 0;
-
-    bool m_stopping = false;
-
+    Piber::ptr m_rootPiber;///调度协程
+    int m_rootThread = 0;///调度协程所在的线程号
+    bool m_stopping = false;///是否停止调度
 public:
     Scheduler(size_t threads,bool use_caller,const std::string &name);
     ~Scheduler();
     void start();
     void run();
     Scheduler *GetThis();
-    Piber *GetMainFiber();
+    Piber *GetMainPiber();
 };
 
 

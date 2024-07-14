@@ -150,7 +150,7 @@ void Scheduler::run()
 
 
 void Scheduler::stop() {
-    SYLAR_LOG_DEBUG(g_logger) << "stop";
+    //SYLAR_LOG_DEBUG(g_logger) << "stop";
     if (stopping()) {
         return;
     }

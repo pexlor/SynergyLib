@@ -75,6 +75,7 @@ public:
     void stop();
     Scheduler *GetThis();
     Piber *GetMainPiber();
+    bool stopping();
 };
 
 

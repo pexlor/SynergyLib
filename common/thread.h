@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
+#include <functional>
 #include "mutex.h"
+#include "util.h"
 namespace Pliber
 {
 
@@ -11,7 +13,6 @@ class Thread{
 public:
     typedef std::shared_ptr<Thread> ptr;
     
-
     /**
      * @brief 构造函数
      */
@@ -62,7 +63,9 @@ private:
 
     std::string m_name;
 
-    Semaphore m_semaphoore;
+    Semaphore m_semaphore;
+
+    void* run(void *arg);
 
 };
 

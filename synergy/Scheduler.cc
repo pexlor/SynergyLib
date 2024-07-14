@@ -98,7 +98,6 @@ void Scheduler::run()
                     tickle_me = true;
                     continue;
                 }
-
                 if(it->piber)
                 {
 

@@ -5,7 +5,7 @@ namespace Pliber
 
 
 bool Timer::cancel(){
-    TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+    RWMutex::WriteLock lock(m_manager->m_mutex);
     if(m_cb) {
         m_cb = nullptr;
         auto it = m_manager->m_timers.find(shared_from_this());
@@ -16,7 +16,7 @@ bool Timer::cancel(){
 }
 
 bool Timer::refresh(){
-    TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+    RWMutex::WriteLock lock(m_manager->m_mutex);
     if(!m_cb) {
         return false;
     }
@@ -25,7 +25,7 @@ bool Timer::refresh(){
         return false;
     }
     m_manager->m_timers.erase(it);
-    m_next = sylar::GetElapsedMS() + m_ms;
+    m_next = GetElapsedMS() + m_ms;
     m_manager->m_timers.insert(shared_from_this());
     return true;
 }
@@ -34,7 +34,7 @@ bool Timer::reset(uint64_t ms, bool from_now){
     if(ms == m_ms && !from_now) {
         return true;
     }
-    TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
+    RWMutex::WriteLock lock(m_manager->m_mutex);
     if(!m_cb) {
         return false;
     }
@@ -45,7 +45,7 @@ bool Timer::reset(uint64_t ms, bool from_now){
     m_manager->m_timers.erase(it);
     uint64_t start = 0;
     if(from_now) {
-        start = sylar::GetElapsedMS();
+        start = GetElapsedMS();
     } else {
         start = m_next - m_ms;
     }
@@ -62,7 +62,7 @@ Timer::Timer(uint64_t ms,std::is_function<void()> cb,bool recurring,TimerManager
     ,m_cb(cb)
     ,m_manager(manager) {
 
-    m_next = GetElapseMS() + m_ms;
+    m_next = GetElapsedMS() + m_ms;
 
 }
 

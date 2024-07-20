@@ -18,7 +18,7 @@ public:
     bool reset(uint64_t ms, bool from_now);
 
 private:
-    Timer(uint64_t ms,std::is_function<void()> cb,bool recurring,TimerManager* manager);
+    Timer(uint64_t ms,std::function<void()> cb,bool recurring,TimerManager* manager);
 
     Timer(uint64_t next);
 

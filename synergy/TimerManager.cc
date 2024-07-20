@@ -2,20 +2,44 @@
 
 namespace Pliber{
 
-
+/**
+ * @brief 构造函数
+ */
 TimerManager::TimerManager() {
-    m_previouseTime = sylar::GetElapsedMS();
+    m_previouseTime = GetElapsedMS();
 }
 
+/**
+ * @brief 析构函数
+ */
 TimerManager::~TimerManager() {
 }
 
-Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb
-                                  ,bool recurring) {
+
+/**
+ * @brief 添加定时器
+ * @param[in] ms 定时器执行间隔时间
+ * @param[in] cb 定时器回调函数
+ * @param[in] recurring 是否循环定时器
+ */
+Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb,bool recurring) {
     Timer::ptr timer(new Timer(ms, cb, recurring, this));
-    RWMutexType::WriteLock lock(m_mutex);
-    addTimer(timer, lock);
+    RWMutex::WriteLock lock(m_mutex);
+    addTimer(timer,lock);
     return timer;
+}
+
+void TimerManager::addTimer(Timer::ptr val, RWMutex::WriteLock& lock) {
+    auto it = m_timers.insert(val).first;
+    bool at_front = (it == m_timers.begin()) && !m_tickled;
+    if(at_front) {
+        m_tickled = true;
+    }
+    lock.unlock();
+
+    if(at_front) {
+        //onTimerInsertedAtFront();
+    }
 }
 
 static void OnTimer(std::weak_ptr<void> weak_cond, std::function<void()> cb) {
@@ -32,14 +56,14 @@ Timer::ptr TimerManager::addConditionTimer(uint64_t ms, std::function<void()> cb
 }
 
 uint64_t TimerManager::getNextTimer() {
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutex::ReadLock lock(m_mutex);
     m_tickled = false;
     if(m_timers.empty()) {
         return ~0ull;
     }
 
     const Timer::ptr& next = *m_timers.begin();
-    uint64_t now_ms = sylar::GetElapsedMS();
+    uint64_t now_ms = GetElapsedMS();
     if(now_ms >= next->m_next) {
         return 0;
     } else {
@@ -48,20 +72,20 @@ uint64_t TimerManager::getNextTimer() {
 }
 
 void TimerManager::listExpiredCb(std::vector<std::function<void()> >& cbs) {
-    uint64_t now_ms = sylar::GetElapsedMS();
+    uint64_t now_ms = GetElapsedMS();
     std::vector<Timer::ptr> expired;
     {
-        RWMutexType::ReadLock lock(m_mutex);
+        RWMutex::ReadLock lock(m_mutex);
         if(m_timers.empty()) {
             return;
         }
     }
-    RWMutexType::WriteLock lock(m_mutex);
+    RWMutex::WriteLock lock(m_mutex);
     if(m_timers.empty()) {
         return;
     }
     bool rollover = false;
-    if(SYLAR_UNLIKELY(detectClockRollover(now_ms))) {
+    if((detectClockRollover(now_ms))) {
         // 使用clock_gettime(CLOCK_MONOTONIC_RAW)，应该不可能出现时间回退的问题
         rollover = true;
     }
@@ -89,18 +113,6 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()> >& cbs) {
     }
 }
 
-void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock& lock) {
-    auto it = m_timers.insert(val).first;
-    bool at_front = (it == m_timers.begin()) && !m_tickled;
-    if(at_front) {
-        m_tickled = true;
-    }
-    lock.unlock();
-
-    if(at_front) {
-        onTimerInsertedAtFront();
-    }
-}
 
 bool TimerManager::detectClockRollover(uint64_t now_ms) {
     bool rollover = false;
@@ -113,9 +125,8 @@ bool TimerManager::detectClockRollover(uint64_t now_ms) {
 }
 
 bool TimerManager::hasTimer() {
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutex::ReadLock lock(m_mutex);
     return !m_timers.empty();
 }
-
-
+    
 }

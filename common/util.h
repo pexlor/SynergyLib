@@ -17,4 +17,6 @@ int64_t getNowMs();
 
 int32_t getInt32FromNetByte(const char* buf);
 
+uint64_t GetElapsedMS();
+
 }

@@ -56,7 +56,7 @@ bool Timer::reset(uint64_t ms, bool from_now){
 }
 
 
-Timer::Timer(uint64_t ms,std::is_function<void()> cb,bool recurring,TimerManager* manager)
+Timer::Timer(uint64_t ms,std::function<void()> cb,bool recurring,TimerManager* manager)
     :m_ms(ms)
     ,m_recurring(recurring)
     ,m_cb(cb)

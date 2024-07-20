@@ -35,7 +35,7 @@ private:
 
 private:
     /**
-     * @brief 定时器比较 仿函数
+     * @brief 定时器比较仿函数
      */
     struct Comparator {
         /**

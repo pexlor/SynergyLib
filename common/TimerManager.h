@@ -43,8 +43,6 @@ private:
 
     uint64_t m_previouseTime = 0;
 
-    
-
 };
 
 }

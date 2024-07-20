@@ -115,7 +115,7 @@ void IOManager::idle()
  
         /**
          * 一旦处理完所有的事件，idle协程yield，这样可以让调度协程(Scheduler::run)重新检查是否有新任务要调度
-         * 上面triggerEvent实际也只是把对应的fiber重新加入调度，要执行的话还要等idle协程退出
+         * 上面triggerEvent实际也只是把对应的piber重新加入调度，要执行的话还要等idle协程退出
          */
         Piber::ptr cur = Piber::GetThis();
         auto raw_ptr   = cur.get();
@@ -134,25 +134,25 @@ void IOManager::idle()
 int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     // 找到fd对应的FdContext，如果不存在，那就分配一个
     FdContext *fd_ctx = nullptr;
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutex::ReadLock lock(m_mutex);
     if ((int)m_fdContexts.size() > fd) {
         fd_ctx = m_fdContexts[fd];
         lock.unlock();
     } else {
         lock.unlock();
-        RWMutexType::WriteLock lock2(m_mutex);
+        RWMutex::WriteLock lock2(m_mutex);
         contextResize(fd * 1.5);
         fd_ctx = m_fdContexts[fd];
     }
  
     // 同一个fd不允许重复添加相同的事件
     FdContext::MutexType::Lock lock2(fd_ctx->mutex);
-    if (SYLAR_UNLIKELY(fd_ctx->events & event)) {
-        SYLAR_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
-                                  << " event=" << (EPOLL_EVENTS)event
-                                  << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
-        SYLAR_ASSERT(!(fd_ctx->events & event));
-    }
+    // if (SYLAR_UNLIKELY(fd_ctx->events & event)) {
+    //     SYLAR_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
+    //                               << " event=" << (EPOLL_EVENTS)event
+    //                               << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
+    //     SYLAR_ASSERT(!(fd_ctx->events & event));
+    // }
  
     // 将新的事件加入epoll_wait，使用epoll_event的私有指针存储FdContext的位置
     int op = fd_ctx->events ? EPOLL_CTL_MOD : EPOLL_CTL_ADD;
@@ -172,18 +172,18 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     // 待执行IO事件数加1
     ++m_pendingEventCount;
  
-    // 找到这个fd的event事件对应的EventContext，对其中的scheduler, cb, fiber进行赋值
+    // 找到这个fd的event事件对应的EventContext，对其中的scheduler, cb, piber进行赋值
     fd_ctx->events                     = (Event)(fd_ctx->events | event);
     FdContext::EventContext &event_ctx = fd_ctx->getEventContext(event);
-    SYLAR_ASSERT(!event_ctx.scheduler && !event_ctx.fiber && !event_ctx.cb);
+    SYLAR_ASSERT(!event_ctx.scheduler && !event_ctx.piber && !event_ctx.cb);
  
     // 赋值scheduler和回调函数，如果回调函数为空，则把当前协程当成回调执行体
     event_ctx.scheduler = Scheduler::GetThis();
     if (cb) {
         event_ctx.cb.swap(cb);
     } else {
-        event_ctx.fiber = Fiber::GetThis();
-        SYLAR_ASSERT2(event_ctx.fiber->getState() == Fiber::RUNNING, "state=" << event_ctx.fiber->getState());
+        event_ctx.piber = piber::GetThis();
+        //SYLAR_ASSERT2(event_ctx.piber->getState() == piber::RUNNING, "state=" << event_ctx.piber->getState());
     }
     return 0;
 }
@@ -196,7 +196,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
  */
 bool IOManager::delEvent(int fd, Event event) {
     // 找到fd对应的FdContext
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutex::ReadLock lock(m_mutex);
     if ((int)m_fdContexts.size() <= fd) {
         return false;
     }
@@ -242,7 +242,7 @@ bool IOManager::delEvent(int fd, Event event) {
  */
 bool IOManager::cancelEvent(int fd, Event event) {
     // 找到fd对应的FdContext
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutex::ReadLock lock(m_mutex);
     if ((int)m_fdContexts.size() <= fd) {
         return false;
     }
@@ -284,7 +284,7 @@ bool IOManager::cancelEvent(int fd, Event event) {
  */
 bool IOManager::cancelAll(int fd) {
     // 找到fd对应的FdContext
-    RWMutexType::ReadLock lock(m_mutex);
+    RWMutex::ReadLock lock(m_mutex);
     if ((int)m_fdContexts.size() <= fd) {
         return false;
     }

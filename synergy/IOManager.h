@@ -84,6 +84,14 @@ public:
      * 如果当前没有空闲调度线程，那就没必要发通知
      */
     void tickle();
+
+    int addEvent(int fd, Event event, std::function<void()> cb);
+
+    bool delEvent(int fd, Event event);
+
+    bool cancelEvent(int fd, Event event);
+
+    bool cancelAll(int fd);
 private:
     /// epoll 文件句柄
     int m_epfd = 0;

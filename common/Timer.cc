@@ -3,7 +3,6 @@
 namespace Pliber
 {
 
-
 bool Timer::cancel(){
     RWMutex::WriteLock lock(m_manager->m_mutex);
     if(m_cb) {

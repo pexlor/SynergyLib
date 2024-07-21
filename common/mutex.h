@@ -76,6 +76,8 @@ private:
 class Mutex {
 
 public:
+    typedef ScopeMutex<Mutex> MutexLock;
+
     Mutex() {   
         pthread_mutex_init(&m_mutex, NULL);
     }

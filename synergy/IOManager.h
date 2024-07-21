@@ -2,6 +2,7 @@
 #include "Scheduler.h"
 #include <sys/epoll.h>
 #include <fcntl.h>
+#include "log.h"
 namespace Pliber{
 /**
  * @brief IO事件，继承自epoll对事件的定义

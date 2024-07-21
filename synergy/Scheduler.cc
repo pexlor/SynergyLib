@@ -25,7 +25,7 @@ Scheduler::Scheduler(size_t threads,bool use_caller,const std::string &name):
         Thread::SetName(m_name);
 
         t_scheduler_piber = m_rootPiber.get();
-        m_rootThread = GetThreadId();
+        m_rootThread = getThreadId();
         m_threadIds.push_back(m_rootThread);
     } else {
         m_rootThread = -1;
@@ -44,11 +44,11 @@ Piber *Scheduler::GetMainPiber() {
 
 void Scheduler::start()
 {
-    DEBUG("Scheduler start!");
+    DEBUGLOG("Scheduler start!");
     ScopeMutex<Mutex> t_scopeMutex(m_mutex);
     if(m_stopping)
     {
-        DEBUG("Scheduler is stopped");
+        DEBUGLOG("Scheduler is stopped");
         return;
     }
     m_threads.resize(m_threadCount);
@@ -60,6 +60,10 @@ void Scheduler::start()
     }
 }
 
+void Scheduler::setThis() {
+    t_scheduler = this;
+}
+
 bool Scheduler::stopping() {
     
     ScopeMutex<Mutex> t_scopeMutex(m_mutex);
@@ -69,9 +73,9 @@ bool Scheduler::stopping() {
 
 void Scheduler::run()
 {
-    DEBUG("Scheduler run");
+    DEBUGLOG("Scheduler run");
     setThis();
-    if(GetThreadD() != m_rootThread)
+    if(getThreadId() != m_rootThread)
     {
         t_scheduler_piber = Piber::GetThis().get();
     }
@@ -91,7 +95,7 @@ void Scheduler::run()
             auto it = m_tasks.begin();
             while(it != m_tasks.end())
             {
-                if(it->thread != -1 && it->thread != GetThreadId())
+                if(it->thread != -1 && it->thread != getThreadId())
                 {
                     //指定了调度线程，但是不在当前线程上调度
                     ++it;
@@ -137,7 +141,7 @@ void Scheduler::run()
             // 进到这个分支情况一定是任务队列空了，调度idle协程即可
             if (idle_piber->getState() == Piber::TERM) {
                 // 如果调度器没有调度任务，那么idle协程会不停地resume/yield，不会结束，如果idle协程结束了，那一定是调度器停止了
-                //SYLAR_LOG_DEBUG(g_logger) << "idle fiber term";
+                //SYLAR_LOG_DEBUGLOG(g_logger) << "idle fiber term";
                 break;
             }
             ++m_idleThreadCount;
@@ -149,7 +153,7 @@ void Scheduler::run()
 
 
 void Scheduler::stop() {
-    //SYLAR_LOG_DEBUG(g_logger) << "stop";
+    //SYLAR_LOG_DEBUGLOG(g_logger) << "stop";
     if (stopping()) {
         return;
     }
@@ -166,14 +170,14 @@ void Scheduler::stop() {
         tickle();
     }
  
-    if (m_rootFiber) {
+    if (m_rootPiber) {
         tickle();
     }
  
     /// 在use caller情况下，调度器协程结束时，应该返回caller协程
     if (m_rootPiber) {
         m_rootPiber->resume();
-        //SYLAR_LOG_DEBUG(g_logger) << "m_rootFiber end";
+        //SYLAR_LOG_DEBUGLOG(g_logger) << "m_rootFiber end";
     }
  
     std::vector<Thread::ptr> thrs;
@@ -186,4 +190,12 @@ void Scheduler::stop() {
         i->join();
     }
 }
+
+void Scheduler::idle() {
+    DEBUGLOG("idle");
+    while (!stopping()) {
+       Piber::GetThis()->yield();
+    }
+}
+
 }

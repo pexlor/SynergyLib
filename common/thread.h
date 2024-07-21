@@ -3,6 +3,7 @@
 #include <functional>
 #include "mutex.h"
 #include "util.h"
+#include "log.h"
 namespace Pliber
 {
 
@@ -53,6 +54,8 @@ public:
      */
     static const std::string & GetName ();
 
+    static void SetName(std::string& name);
+
 private:
 
     pid_t m_id = -1;
@@ -65,7 +68,7 @@ private:
 
     Semaphore m_semaphore;
 
-    void* run(void *arg);
+    static void* run(void *arg);
 
 };
 

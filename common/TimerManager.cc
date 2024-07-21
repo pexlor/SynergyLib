@@ -28,6 +28,9 @@ Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb,bool rec
     return timer;
 }
 
+/**
+ * @brief 将定时器加入管理器中
+*/
 void TimerManager::addTimer(Timer::ptr val, RWMutex::WriteLock& lock) {
     auto it = m_timers.insert(val).first;
     bool at_front = (it == m_timers.begin()) && !m_tickled;
@@ -37,7 +40,7 @@ void TimerManager::addTimer(Timer::ptr val, RWMutex::WriteLock& lock) {
     lock.unlock();
 
     if(at_front) {
-        //onTimerInsertedAtFront();
+        onTimerInsertedAtFront();
     }
 }
 
@@ -70,6 +73,10 @@ uint64_t TimerManager::getNextTimer() {
     }
 }
 
+/**
+ * @brief 获取需要执行的定时器的回调函数列表
+ * @param[out] cbs 回调函数数组
+ */
 void TimerManager::listExpiredCb(std::vector<std::function<void()> >& cbs) {
     uint64_t now_ms = GetElapsedMS();
     std::vector<Timer::ptr> expired;
@@ -116,7 +123,7 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()> >& cbs) {
 bool TimerManager::detectClockRollover(uint64_t now_ms) {
     bool rollover = false;
     if(now_ms < m_previouseTime &&
-            now_ms < (m_previouseTime - 60 * 60 * 1000)) {
+            now_ms < (m_previouseTime - 60 * 60 * 1000)) { // 60 * 60 * 1000ms 为 1小时
         rollover = true;
     }
     m_previouseTime = now_ms;

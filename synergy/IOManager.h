@@ -3,6 +3,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include "log.h"
+#include "TimerManager.h"
 namespace Pliber{
 /**
  * @brief IO事件，继承自epoll对事件的定义
@@ -58,7 +59,7 @@ struct FdContext {
 
 };
 
-class IOManager : public Scheduler
+class IOManager : public Scheduler,TimerManager
 {
 private:
     /* data */
@@ -104,7 +105,6 @@ private:
     RWMutex m_mutex;
     /// socket事件上下文的容器
     std::vector<FdContext *> m_fdContexts;
-
     /**
      * @brief idle协程
      * @details 对于IO协程调度来说，应阻塞在等待IO事件上，idle退出的时机是epoll_wait返回，对应的操作是tickle或注册的IO事件就绪

@@ -13,12 +13,12 @@ Thread::Thread(std::function<void()> cb,const std::string &name)
     ,m_name(name)
 {
     if(name.empty()){
-        m_name = "UNKONW"
+        m_name = "UNKONW";
     }
-    int rt = pthread_create(&m_thread,nullptr,&Thread::run,this);
+    int rt = pthread_create(&m_thread, nullptr , &Thread::run, this);
     if(rt)
     {
-        ERROR("pthread_create thread fail");
+        ERRORLOG("pthread_create thread fail");
         throw std::logic_error("pthread_create error");
     }
     m_semaphore.wait();
@@ -45,7 +45,7 @@ void Thread::join()
     if (m_thread) {
         int rt = pthread_join(m_thread, nullptr);
         if (rt) {
-            ERROR("pthread_join thread fail");
+            ERRORLOG("pthread_join thread fail");
             throw std::logic_error("pthread_join error");
         }
         m_thread = 0;
@@ -70,11 +70,24 @@ void *Thread::run(void *arg) {
 /**
  * @brief 获取当前线程指针
  */
-static Thread * GetThis()
+Thread * Thread::GetThis()
 {
     return t_thread;
 }
 
+/**
+ * @brief 设置当前线程名字
+ */
+void Thread::SetName(std::string& name)
+{
+    if(name.empty()){
+        return;
+    }
+    if(t_thread){
+        t_thread->m_name = name;
+    }
+    t_thread_name = name;
+}
 
 /**
  * @brief 获取当前线程名称

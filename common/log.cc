@@ -87,7 +87,7 @@ Logger::Logger(LogLevel level)
 
 void Logger::SetGetGloballLogger()
 {
-    LogLevel global_log_levle = StringToLogLevel(Config::GetGlobalConfig()->m_log_level);
+    LogLevel global_log_levle = StringToLogLevel("1");
     g_logger = new Logger(global_log_levle);
 }
 

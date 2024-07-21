@@ -4,7 +4,7 @@
  * @version 0.1
  * @date 2021-06-15
  */
-#include "synergy/Piber.h"
+#include "../synergy/Piber.h"
 #include <string>
 #include <vector>
 #include <iostream>

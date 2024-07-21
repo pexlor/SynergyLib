@@ -1,15 +1,14 @@
 #pragma once
 #include "Piber.h"
-#include "common/log.h"
+#include "../common/log.h"
 #include <vector>
 #include <list>
 #include <functional>
-#include "common/mutex.h"
-#include "common/thread.h"
+#include "../common/mutex.h"
+#include "../common/thread.h"
 //#include "common/log.h"
 
 namespace Pliber{
-
 /**
  * @brief 调度任务，可以指定协程或者任务，可以指定在哪个线程上调度
 */
@@ -71,15 +70,15 @@ private:
 
     void idle();
     void setThis();
-    virtual void tickle();
+     void tickle();
 public:
-    Scheduler(size_t threads,bool use_caller,const std::string &name);
-    virtual ~Scheduler();
+    Scheduler(size_t threads = 1,bool use_caller = true,const std::string &name = "Scheduler");
+     ~Scheduler();
     void start();
     void run();
     void stop();
-    Scheduler *GetThis();
-    Piber *GetMainPiber();
+    static Scheduler *GetThis();
+    static Piber *GetMainPiber();
     bool stopping();
 
     /**
@@ -92,7 +91,7 @@ public:
     void schedule(FiberOrCb fc, int thread = -1) {
         bool need_tickle = false;
         {
-            MutexType::Lock lock(m_mutex);
+            Mutex::MutexLock lock(m_mutex);
             need_tickle = scheduleNoLock(fc, thread);
         }
 
@@ -100,7 +99,7 @@ public:
             tickle(); // 唤醒idle协程
         }
     }
-    
+
 private:
     /**
      * @brief 添加调度任务，无锁
@@ -112,7 +111,7 @@ private:
     bool scheduleNoLock(FiberOrCb fc, int thread) {
         bool need_tickle = m_tasks.empty();
         ScheduleTask task(fc, thread);
-        if (task.fiber || task.cb) {
+        if (task.piber || task.cb) {
             m_tasks.push_back(task);
         }
         return need_tickle;

@@ -1,5 +1,10 @@
 #include "util.h"
-
+#include <sys/time.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <assert.h>
+#include <unistd.h>
 namespace Pliber
 {
     
@@ -37,6 +42,12 @@ int32_t getInt32FromNetByte(const char* buf) {
     int32_t re;
     memcpy(&re, buf, sizeof(re));
     return ntohl(re);
+}
+uint64_t GetElapsedMS()
+{
+    struct timespec ts = {0};
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
 }

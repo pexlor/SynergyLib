@@ -3,12 +3,15 @@
 #include <functional>
 #include <ucontext.h>
 #include <atomic>
-#include "Scheduler.h"
+#include "Piber.h"
+
+namespace Pliber{
+
 /**
  *  @brief 协程类
  */
-namespace Pliber{
 class Piber : public std::enable_shared_from_this<Piber> {
+
 public:
     typedef std::shared_ptr<Piber> ptr;
     

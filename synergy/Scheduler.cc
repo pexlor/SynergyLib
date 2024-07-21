@@ -1,4 +1,5 @@
 #include "Scheduler.h"
+
 namespace Pliber{
 /// 当前线程的调度器，同一个调度器下的所有线程指同同一个调度器实例
 static thread_local Scheduler *t_scheduler = nullptr;
@@ -106,7 +107,6 @@ void Scheduler::run()
                 {
 
                 }
-
                 task = *it;
                 m_tasks.erase(it++);
                 ++m_activeThreadCount;
@@ -196,6 +196,16 @@ void Scheduler::idle() {
     while (!stopping()) {
        Piber::GetThis()->yield();
     }
+}
+
+Scheduler::~Scheduler(){
+    DEBUGLOG("~Scheduler");
+}
+
+
+void Scheduler::tickle()
+{
+    
 }
 
 }

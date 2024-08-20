@@ -17,10 +17,11 @@ Scheduler::Scheduler(size_t threads,bool use_caller,const std::string &name):
     m_useCaller(use_caller),
     m_name(name)
 {
-    if(use_caller){
+    if(use_caller){ //如果把创建线程
         --threads;
         Piber::GetThis();///创建线程主协程
         t_scheduler = this;
+
         m_rootPiber.reset(new Piber(std::bind(&Scheduler::run,this),0,false));
 
         Thread::SetName(m_name);
@@ -31,7 +32,6 @@ Scheduler::Scheduler(size_t threads,bool use_caller,const std::string &name):
     } else {
         m_rootThread = -1;
     }
-
     m_threadCount = threads;
 }
 
@@ -85,7 +85,6 @@ void Scheduler::run()
 
     ScheduleTask task;
 
-
     while(true)
     {
         task.reset();
@@ -103,10 +102,17 @@ void Scheduler::run()
                     tickle_me = true;
                     continue;
                 }
-                if(it->piber)
-                {
 
+                if(it->piber || it->cb)//// 找到一个未指定线程，或是指定了当前线程的任务
+                {
+                    
                 }
+
+                if(it->piber && it->piber->getState() == Piber::RUNING) {
+                    ++it;
+                    continue;
+                }
+                // 当前调度线程找到一个任务，准备开始调度，将其从任务队列中剔除，活动线程数加1
                 task = *it;
                 m_tasks.erase(it++);
                 ++m_activeThreadCount;

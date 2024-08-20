@@ -158,7 +158,6 @@ void Piber::SetThis(Piber *f)
 ///可以改进，将初始化操作合getthis分开
 Piber::ptr Piber::GetThis()
 {
-    
     if(t_piber)
     {
         return t_piber->shared_from_this();

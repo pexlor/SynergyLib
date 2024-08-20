@@ -3,7 +3,6 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <vector>
-#include "../common/log.h"
 #include "../common/Timer.h"
 namespace Pliber{
 /**
@@ -114,7 +113,5 @@ private:
      */
     void idle();
 };
-
-
 
 }

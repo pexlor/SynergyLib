@@ -15,6 +15,7 @@ class Piber : public std::enable_shared_from_this<Piber> {
 public:
     typedef std::shared_ptr<Piber> ptr;
     
+    // 协程的运行状态
     enum State {
         ///就绪态
         READY,
@@ -96,7 +97,8 @@ public:
      * @brief 获取当前协程id
      */
     static uint64_t GetFiberId();
-    private:
+
+private:
     /// 协程id
     uint64_t m_id = 0;
     /// 协程栈⼤⼩

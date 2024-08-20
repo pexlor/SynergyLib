@@ -45,11 +45,11 @@ Piber *Scheduler::GetMainPiber() {
 
 void Scheduler::start()
 {
-    DEBUGLOG("Scheduler start!");
+    //DEBUGLOG("Scheduler start!");
     ScopeMutex<Mutex> t_scopeMutex(m_mutex);
     if(m_stopping)
     {
-        DEBUGLOG("Scheduler is stopped");
+        //DEBUGLOG("Scheduler is stopped");
         return;
     }
     m_threads.resize(m_threadCount);
@@ -74,7 +74,7 @@ bool Scheduler::stopping() {
 
 void Scheduler::run()
 {
-    DEBUGLOG("Scheduler run");
+    //DEBUGLOG("Scheduler run");
     setThis();
     if(getThreadId() != m_rootThread)
     {
@@ -192,14 +192,14 @@ void Scheduler::stop() {
 }
 
 void Scheduler::idle() {
-    DEBUGLOG("idle");
+    //DEBUGLOG("idle");
     while (!stopping()) {
        Piber::GetThis()->yield();
     }
 }
 
 Scheduler::~Scheduler(){
-    DEBUGLOG("~Scheduler");
+    //DEBUGLOG("~Scheduler");
 }
 
 

@@ -6,7 +6,6 @@
  */
 
 #include "../synergy/Scheduler.h"
-#include "../common/log.h"
 #include <iostream>
 
 /**
@@ -73,7 +72,7 @@ void test_fiber4() {
 
 int main() {
     std::cout << "main begin";
-    Pliber::Logger::SetGetGloballLogger();
+    //Pliber::Logger::SetGetGloballLogger();
     /** 
      * 只使用main函数线程进行协程调度，相当于先攒下一波协程，然后切换到调度器的run方法将这些协程
      * 消耗掉，然后再返回main函数往下执行

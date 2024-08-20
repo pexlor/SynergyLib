@@ -2,12 +2,11 @@
 
 namespace Pliber{
 
-static std::atomic<uint64_t> s_piber_count{ 0 };
-static std::atomic<uint64_t> s_piber_id{ 0 };
+static std::atomic<uint64_t> s_piber_count{ 0 }; // 统计协程的数量
+static std::atomic<uint64_t> s_piber_id{ 0 }; //生成协程id
 
-
-static thread_local Piber * t_piber = nullptr;//正在执行的协程
-static thread_local Piber::ptr t_thread_piber = nullptr; //当前线程的主协程。
+static thread_local Piber * t_piber = nullptr;//线程局部变量，正在执行的协程
+static thread_local Piber::ptr t_thread_piber = nullptr; //线程局部变量，当前线程的主协程。
 
 /**
  * @brief 构造函数
@@ -17,15 +16,14 @@ Piber::Piber()
 {
     SetThis(this);
     m_state = RUNING;
-
+    
     if(getcontext(&m_ctx)) // 获取上下文
     {
-
+        
     }
-
     ++s_piber_count;
     m_id = s_piber_id++;
-    printf("Piber::Piber() main id = %d\n", m_id);
+    //printf("Piber::Piber() main id = %d\n", m_id);
 }
 
 /**
@@ -50,9 +48,7 @@ Piber::Piber(std::function<void()> cb,size_t stacksize,bool run_in_scheduler)
     m_ctx.uc_link           = nullptr ;
     m_ctx.uc_stack.ss_sp    = m_stack;
     m_ctx.uc_stack.ss_size  = m_stacksize;
-
     makecontext(&m_ctx,&Piber::MainFunc,0); //绑定函数
-
     printf("Fiber::Fiber() id = %d\n",m_id);
 }
 
@@ -91,7 +87,7 @@ void Piber::reset(std::function<void()> cb)
 
     makecontext(&m_ctx,&Piber::MainFunc,0);
     m_state = READY;
-    printf("Fiber::Fiber() id = %d\n",m_id);
+
 }
 
 /**
@@ -101,23 +97,21 @@ void Piber::resume()
 {
     SetThis(this);
     m_state = RUNING;
-
     /// 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
     if(m_runInScheduler)
-    {
-        if(swapcontext(&(t_thread_piber->m_ctx),&m_ctx)) /// 恢复上下文
-        {
-
-        }
-    }else
     {
         if(swapcontext(&(Scheduler::GetMainPiber()->m_ctx),&m_ctx))
         {
 
         }
+    }else
+    {
+        if(swapcontext(&(t_thread_piber->m_ctx),&m_ctx)) /// 恢复上下文
+        {
+
+        }
     }
 }
-
 
 /**
  * @brief 当前协程让出执行权，状态变为READY
@@ -133,13 +127,13 @@ void Piber::yield()
     /// 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
     if(m_runInScheduler)
     {
-        if(swapcontext(&m_ctx,&(t_thread_piber->m_ctx)))
+         if(swapcontext(&m_ctx,&(Scheduler::GetMainPiber()->m_ctx)))
         {
 
         }
     }else
     {
-        if(swapcontext(&m_ctx,&(Scheduler::GetMainPiber()->m_ctx)))
+       if(swapcontext(&m_ctx,&(t_thread_piber->m_ctx)))
         {
 
         }
@@ -153,6 +147,7 @@ void Piber::SetThis(Piber *f)
 {
     t_piber = f;
 }
+
 /**
  * @brief 返回当前线程正在执⾏的协程
  * @details 如果当前线程还未创建协程，则创建线程的第⼀个协程，
@@ -160,7 +155,6 @@ void Piber::SetThis(Piber *f)
  * 结束时,都要切回到主协程，由主协程重新选择新的协程进⾏resume
  * @attention 线程如果要创建协程，那么应该⾸先执⾏⼀下Fiber::GetThis()操作，以初始化主函数协程
  */
-
 ///可以改进，将初始化操作合getthis分开
 Piber::ptr Piber::GetThis()
 {
@@ -175,14 +169,14 @@ Piber::ptr Piber::GetThis()
     return t_piber->shared_from_this();
 }
 
-
 /**
  * @brief 获取总协程数
  */
 uint64_t Piber::TotalFibers()
 {
-
+    return s_piber_count;
 }
+
 /**
  * @brief 协程⼊⼝函数
  */

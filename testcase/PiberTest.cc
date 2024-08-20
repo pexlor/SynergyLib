@@ -5,42 +5,82 @@
  * @date 2021-06-15
  */
 #include "../synergy/Piber.h"
+#include "../common/thread.h"
 #include <string>
 #include <vector>
 #include <iostream>
-
+using namespace Pliber;
 void run_in_fiber2() {
-    std::cout << "run_in_fiber2 begin\n";
-    std::cout << "run_in_fiber2 end\n";
+    std::cout << "run_in_fiber2 begin"<< std::endl;
+    std::cout << "run_in_fiber2 end"<< std::endl;
 }
- 
+
 void run_in_fiber() {
-    std::cout << "run_in_fiber begin\n";
- 
-    /**
-     * 非对称协程，子协程不能创建并运行新的子协程，下面的操作是有问题的，
-     * 子协程再创建子协程，原来的主协程就跑飞了
-     */
-    Pliber::Piber::ptr fiber(new Pliber::Piber(run_in_fiber2));
-    //fiber->resume();
- 
-    std::cout << "run_in_fiber end\n";
+    std::cout << "run_in_fiber begin"<< std::endl;
+
+    std::cout << "before run_in_fiber yield"<< std::endl;
+    Piber::GetThis()->yield();
+    std::cout << "after run_in_fiber yield"<< std::endl;
+
+    std::cout << "run_in_fiber end"<< std::endl;
+    // fiber结束之后会自动返回主协程运行
 }
- 
+
+void test_fiber() {
+    std::cout << "test_fiber begin"<< std::endl;
+
+    // 初始化线程主协程
+    Piber::GetThis();
+
+    Piber::ptr fiber(new Piber(run_in_fiber, 0, false));
+    std::cout << "use_count:" << fiber.use_count()<< std::endl; // 1
+
+    std::cout << "before test_fiber resume"<< std::endl;
+    fiber->resume(); 
+    std::cout << "after test_fiber resume"<< std::endl;
+
+    /** 
+     * 关于fiber智能指针的引用计数为3的说明：
+     * 一份在当前函数的fiber指针，一份在MainFunc的cur指针
+     * 还有一份在在run_in_fiber的GetThis()结果的临时变量里
+     */
+    std::cout << "use_count:" << fiber.use_count()<< std::endl; // 3
+
+    std::cout << "fiber status: " << fiber->getState()<< std::endl; // READY
+
+    std::cout << "before test_fiber resume again"<< std::endl;
+
+    fiber->resume();
+    std::cout << "after test_fiber resume again"<< std::endl;
+
+    std::cout << "use_count:" << fiber.use_count()<< std::endl; // 1
+    std::cout << "fiber status: " << fiber->getState()<< std::endl; // TERM
+
+    fiber->reset(run_in_fiber2); // 上一个协程结束之后，复用其栈空间再创建一个新协程
+    fiber->resume();
+
+    std::cout << "use_count:" << fiber.use_count()<< std::endl; // 1
+    std::cout << "test_fiber end"<< std::endl;
+}
+
 int main(int argc, char *argv[]) {
-    //sylar::EnvMgr::GetInstance()->init(argc, argv);
-    //sylar::Config::LoadFromConfDir(sylar::EnvMgr::GetInstance()->getConfigPath());
- 
-    std::cout << "main begin\n";
-    
-    Pliber::Piber::ptr main_ptr = Pliber::Piber::GetThis();
-    std::cout << "main begin\n";
-    Pliber::Piber::ptr piber(new Pliber::Piber(run_in_fiber));
+    //EnvMgr::GetInstance()->init(argc, argv);
+    //onfig::LoadFromConfDir(EnvMgr::GetInstance()->getConfigPath());
 
-    piber->resume();
+    //SetThreadName("main_thread");
+    std::cout << "main begin" << std::endl;
 
-    //piber->reset(run_in_fiber2);
+    std::vector<Thread::ptr> thrs;
+    for (int i = 0; i < 3; i++) {
+        thrs.push_back(Thread::ptr(
+            new Thread(&test_fiber, "thread_" + std::to_string(i))));
+            std::cout << i << std::endl;
+    }
 
-    std::cout << "main end\n";
+    for (auto i : thrs) {
+        i->join();
+    }
+
+    std::cout << "main end"<< std::endl;
     return 0;
 }

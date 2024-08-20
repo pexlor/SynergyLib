@@ -1,11 +1,11 @@
 #pragma once
 #include "Piber.h"
-#include "../common/log.h"
 #include <vector>
 #include <list>
 #include <functional>
 #include "../common/mutex.h"
 #include "../common/thread.h"
+#include <iostream>
 //#include "common/log.h"
 
 namespace Pliber{
@@ -113,6 +113,7 @@ private:
         ScheduleTask task(fc, thread);
         if (task.piber || task.cb) {
             m_tasks.push_back(task);
+            std::cout << "add task\n";
         }
         return need_tickle;
     }

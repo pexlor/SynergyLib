@@ -2,8 +2,9 @@
 #include "Scheduler.h"
 #include <sys/epoll.h>
 #include <fcntl.h>
+#include <vector>
 #include "../common/log.h"
-#include "../common/TimerManager.h"
+#include "../common/Timer.h"
 namespace Pliber{
 /**
  * @brief IO事件，继承自epoll对事件的定义
@@ -24,7 +25,6 @@ enum Event {
  */
 struct FdContext {
     typedef Mutex MutexType;
-
     /**
      * @brief 事件上下文类
      */

@@ -73,7 +73,7 @@ void test_fiber4() {
 
 int main() {
     std::cout << "main begin";
-
+    Pliber::Logger::SetGetGloballLogger();
     /** 
      * 只使用main函数线程进行协程调度，相当于先攒下一波协程，然后切换到调度器的run方法将这些协程
      * 消耗掉，然后再返回main函数往下执行
@@ -99,13 +99,14 @@ int main() {
      * 包括在子协程中也可以通过sylar::Scheduler::GetThis()->scheduler()的方式继续添加调度任务
      */
     sc.schedule(test_fiber4);
-
+    
     /**
      * 停止调度，如果未使用当前线程进行调度，那么只需要简单地等所有调度线程退出即可
      * 如果使用了当前线程进行调度，那么要先执行当前线程的协程调度函数，等其执行完后再返回caller协程继续往下执行
      */
     sc.stop();
 
-    std::cout << "main end";
+    std::cout << "main end\n";
+    
     return 0;
 }

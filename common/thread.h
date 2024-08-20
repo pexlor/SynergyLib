@@ -3,7 +3,6 @@
 #include <functional>
 #include "mutex.h"
 #include "util.h"
-#include "log.h"
 namespace Pliber
 {
 

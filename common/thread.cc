@@ -18,7 +18,6 @@ Thread::Thread(std::function<void()> cb,const std::string &name)
     int rt = pthread_create(&m_thread, nullptr , &Thread::run, this);
     if(rt)
     {
-        ERRORLOG("pthread_create thread fail");
         throw std::logic_error("pthread_create error");
     }
     m_semaphore.wait();
@@ -45,7 +44,6 @@ void Thread::join()
     if (m_thread) {
         int rt = pthread_join(m_thread, nullptr);
         if (rt) {
-            ERRORLOG("pthread_join thread fail");
             throw std::logic_error("pthread_join error");
         }
         m_thread = 0;
